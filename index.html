@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nefes Haritası - Etkileşimli WebGIS Demo (Aydınlık)</title>
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #F3F6F8; 
+    --bg-1: #FFFFFF; 
+    --bg-2: #F8FAFC;
+    --line: rgba(0,0,0,0.08);
+    --line-strong: rgba(0,0,0,0.15);
+    --ink: #0F172A; 
+    --ink-soft: #64748B;
+    
+    --air-color: #EF4444; 
+    --pop-color: #06B6D4; 
+    --alert-color: #F43F5E; 
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    background: var(--bg-0);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  #sidebar {
+    width: 380px;
+    background: var(--bg-1);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.04);
+  }
+  .header {
+    padding: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header p {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  
+  .panel-content {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  
+  .controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+  .toggle-btn {
+    background: var(--bg-1);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .toggle-btn:hover { border-color: rgba(0,0,0,0.3); background: var(--bg-2); }
+  .toggle-btn[data-active="true"] {
+    background: var(--bg-2);
+    border-color: rgba(0,0,0,0.3);
+  }
+  .indicator { width: 12px; height: 12px; border-radius: 50%; opacity: 0.3; }
+  .toggle-btn[data-active="true"] .indicator { opacity: 1; box-shadow: 0 0 8px currentColor; }
+  
+  .data-box {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .data-box h3 { font-size: 14px; margin-bottom: 16px; color: var(--ink-soft); font-weight: 600; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; font-weight: 500; }
+  .stat-row:last-child { margin-bottom: 0; }
+  .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; }
+  
+  .empty-state { color: var(--ink-soft); font-size: 13px; text-align: center; padding: 20px 0; }
+  .alert-badge {
+    display: inline-block;
+    background: rgba(244,63,94,0.1);
+    color: var(--alert-color);
+    border: 1px solid rgba(244,63,94,0.3);
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 12px;
+    width: 100%;
+    text-align: center;
+  }
+
+  #map { flex: 1; background: #E5E7EB; }
+  
+  .leaflet-popup-content-wrapper { 
+    background: var(--bg-1); color: var(--ink); 
+    border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+  .leaflet-popup-tip { background: var(--bg-1); }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="header">
+    <h1><span style="font-size: 24px;">🌬️</span> Nefes Haritası</h1>
+    <p>Gebze Pilot Bölge - Etkileşimli Analiz<br>Proje Ekibi: Şule, Özge, Rabia, Anıl</p>
+  </div>
+  
+  <div class="panel-content">
+    <div class="controls">
+      <button class="toggle-btn" id="btn-air" data-active="true">
+        <div class="indicator" style="background: var(--air-color); color: var(--air-color);"></div>
+        Hava Kalitesi (PM10)
+      </button>
+      <button class="toggle-btn" id="btn-pop" data-active="true">
+        <div class="indicator" style="background: var(--pop-color); color: var(--pop-color);"></div>
+        Kırılgan Nüfus (0-14 & 65+)
+      </button>
+      <button class="toggle-btn" id="btn-overlap" data-active="false">
+        <div class="indicator" style="background: var(--alert-color); color: var(--alert-color);"></div>
+        Kritik Örtüşme (Kesişim)
+      </button>
+    </div>
+
+    <div class="data-box" id="info-panel">
+      <h3>Seçili Bölge Analizi</h3>
+      <div id="cell-data" class="empty-state">
+        Harita üzerinden bir hücreye tıklayarak detaylı verileri görüntüleyin.
+      </div>
+    </div>
+    
+    <div class="data-box">
+      <h3>İlçe Genel Durumu (2024)</h3>
+      <div class="stat-row">
+        <span>Gebze-MTHM PM10 Ort.</span>
+        <span class="stat-val" style="color: var(--air-color);">65.98 µg/m³</span>
+      </div>
+      <div class="stat-row">
+        <span>WHO Sınırı Aşımı</span>
+        <span class="stat-val">4.4 Kat</span>
+      </div>
+      <div class="stat-row">
+        <span>Kırılgan Nüfus Oranı</span>
+        <span class="stat-val" style="color: var(--pop-color);">%29.2</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // 1. Haritayı Başlat (Genişletilmiş alana odaklı)
+  const map = L.map('map', {
+    zoomControl: false
+  }).setView([40.812, 29.405], 12); 
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  // 2. Canlı Sokak Haritası
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
+    maxZoom: 16
+  }).addTo(map);
+
+  const state = { air: true, pop: true, overlap: false };
+  const gridLayerGroup = L.layerGroup().addTo(map);
+  let selectedRect = null;
+
+  // Siyah çizginin kapsadığı genişletilmiş koordinat sınırları (Güneyde sahil, Kuzeyde Şekerpınar)
+  const bounds = {
+    sw: [40.755, 29.340], 
+    ne: [40.865, 29.470]  
+  };
+  
+  const rows = 22; const cols = 18;
+  const latStep = (bounds.ne[0] - bounds.sw[0]) / rows;
+  const lngStep = (bounds.ne[1] - bounds.sw[1]) / cols;
+
+  const cells = [];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const sLat = bounds.sw[0] + r * latStep;
+      const sLng = bounds.sw[1] + c * lngStep;
+      
+      // Sarı ile işaretlenen bölgelere denk gelen ızgara koordinatları (Kuzey-Batı / Şekerpınar, Cumhuriyet, Çayırova üstü)
+      const distToYellowSpot1 = Math.sqrt(Math.pow(r - 18, 2) + Math.pow(c - 6, 2));
+      const distToYellowSpot2 = Math.sqrt(Math.pow(r - 14, 2) + Math.pow(c - 5, 2));
+      const distToYellowSpot3 = Math.sqrt(Math.pow(r - 11, 2) + Math.pow(c - 7, 2));
+      
+      const distToIndustry = Math.sqrt(Math.pow(r - 8, 2) + Math.pow(c - 14, 2));
+      
+      let pm10Raw = 80 - (distToIndustry * 4) + (Math.random()*10);
+      let popRaw = 20;
+
+      // Sarı ile işaretli alanlarda kırılgan nüfusu (popRaw) çok yüksek göster
+      const closestYellow = Math.min(distToYellowSpot1, distToYellowSpot2, distToYellowSpot3);
+      if (closestYellow < 3.5) {
+        popRaw = 75 - (closestYellow * 12) + (Math.random()*5);
+      } else {
+        popRaw = 30 - (Math.sqrt(Math.pow(r - 5, 2) + Math.pow(c - 10, 2)) * 1.5) + (Math.random()*10);
+      }
+      
+      if (pm10Raw < 15) pm10Raw = 15 + Math.random()*10;
+      if (popRaw < 5) popRaw = 5 + Math.random()*5;
+
+      const displayRow = (rows - r);
+      
+      cells.push({
+        id: `R${displayRow}-C${c+1}`, bounds: [[sLat, sLng], [sLat + latStep, sLng + lngStep]],
+        pm10: pm10Raw.toFixed(1), pop: popRaw.toFixed(1),
+        isCritical: (pm10Raw > 60 && popRaw > 40)
+      });
+    }
+  }
+
+  function renderGrid() {
+    gridLayerGroup.clearLayers();
+    
+    cells.forEach(cell => {
+      let fillColor = 'transparent';
+      let fillOpacity = 0;
+      
+      const pm10Norm = Math.min(1, (cell.pm10 - 20) / 70);
+      const popNorm = Math.min(1, (cell.pop - 10) / 60); // Popülasyon normalizasyon eşiği sarı bölgeler için artırıldı
+
+      if (state.overlap && cell.isCritical) {
+        fillColor = 'var(--alert-color)'; fillOpacity = 0.6;
+      } else if (!state.overlap) {
+        if (state.air && state.pop) {
+          if(pm10Norm > popNorm) { fillColor = 'var(--air-color)'; fillOpacity = pm10Norm * 0.5; }
+          else { fillColor = 'var(--pop-color)'; fillOpacity = popNorm * 0.5; }
+        }
+        else if (state.air) { fillColor = 'var(--air-color)'; fillOpacity = pm10Norm * 0.6; }
+        else if (state.pop) { fillColor = 'var(--pop-color)'; fillOpacity = popNorm * 0.6; }
+      }
+
+      if (fillOpacity > 0.1 || state.overlap) {
+        const rect = L.rectangle(cell.bounds, {
+          color: 'rgba(0,0,0,0.15)',
+          weight: 1,
+          fillColor: fillColor, 
+          fillOpacity: fillOpacity
+        });
+
+        rect.on('click', () => handleCellClick(cell, rect));
+        rect.addTo(gridLayerGroup);
+      }
+    });
+  }
+
+  function handleCellClick(cell, rectLayer) {
+    if(selectedRect) { selectedRect.setStyle({ color: 'rgba(0,0,0,0.15)', weight: 1 }); }
+    rectLayer.setStyle({ color: '#0F172A', weight: 3 }); 
+    selectedRect = rectLayer;
+
+    const panel = document.getElementById('cell-data');
+    panel.classList.remove('empty-state');
+    
+    let html = `
+      <div class="stat-row"><span>Hücre Kodu</span><span class="stat-val">${cell.id}</span></div>
+      <div class="stat-row"><span>Tahmini PM10</span><span class="stat-val" style="color:var(--air-color)">${cell.pm10} µg/m³</span></div>
+      <div class="stat-row"><span>Kırılgan Nüfus</span><span class="stat-val" style="color:var(--pop-color)">%${cell.pop}</span></div>
+    `;
+
+    if(cell.isCritical) {
+      html += `<div class="alert-badge">⚠️ Yüksek Kirlilik & Hassas Nüfus Örtüşmesi</div>`;
+    }
+    
+    panel.innerHTML = html;
+    
+    L.popup({closeButton: false, offset: [0, -10]})
+      .setLatLng(rectLayer.getBounds().getCenter())
+      .setContent(`<b>${cell.id}</b><br>PM10: ${cell.pm10}<br>Nüfus: %${cell.pop}`)
+      .openOn(map);
+  }
+
+  document.getElementById('btn-air').addEventListener('click', (e) => {
+    state.air = !state.air; e.currentTarget.setAttribute('data-active', state.air);
+    if(state.overlap) { state.overlap = false; document.getElementById('btn-overlap').setAttribute('data-active', false); }
+    renderGrid();
+  });
+  
+  document.getElementById('btn-pop').addEventListener('click', (e) => {
+    state.pop = !state.pop; e.currentTarget.setAttribute('data-active', state.pop);
+    if(state.overlap) { state.overlap = false; document.getElementById('btn-overlap').setAttribute('data-active', false); }
+    renderGrid();
+  });
+  
+  document.getElementById('btn-overlap').addEventListener('click', (e) => {
+    state.overlap = !state.overlap; e.currentTarget.setAttribute('data-active', state.overlap);
+    if(state.overlap) {
+      state.air = true; state.pop = true;
+      document.getElementById('btn-air').setAttribute('data-active', true);
+      document.getElementById('btn-pop').setAttribute('data-active', true);
+    }
+    renderGrid();
+  });
+
+  renderGrid();
+
+  L.circleMarker([40.793, 29.44], {
+    color: '#0F172A', fillColor: '#FFFFFF', fillOpacity: 1, radius: 6, weight: 2
+  }).addTo(map).bindPopup('<b>Gebze-MTHM İstasyonu</b><br>2024 Yıllık Ort: 65.98 µg/m³');
+
+</script>
+</body>
+</html>
