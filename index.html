@@ -1,337 +1,334 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nefes Haritası - Etkileşimli WebGIS Demo (Aydınlık)</title>
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg-0: #F3F6F8; 
-    --bg-1: #FFFFFF; 
-    --bg-2: #F8FAFC;
-    --line: rgba(0,0,0,0.08);
-    --line-strong: rgba(0,0,0,0.15);
-    --ink: #0F172A; 
-    --ink-soft: #64748B;
-    
-    --air-color: #EF4444; 
-    --pop-color: #06B6D4; 
-    --alert-color: #F43F5E; 
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Inter', sans-serif;
-    color: var(--ink);
-    background: var(--bg-0);
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-  }
-  
-  #sidebar {
-    width: 380px;
-    background: var(--bg-1);
-    border-right: 1px solid var(--line);
-    display: flex;
-    flex-direction: column;
-    z-index: 1000;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.04);
-  }
-  .header {
-    padding: 24px;
-    border-bottom: 1px solid var(--line);
-  }
-  .header h1 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 22px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .header p {
-    font-size: 12px;
-    color: var(--ink-soft);
-    margin-top: 8px;
-    line-height: 1.5;
-  }
-  
-  .panel-content {
-    padding: 24px;
-    overflow-y: auto;
-    flex: 1;
-  }
-  
-  .controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-  .toggle-btn {
-    background: var(--bg-1);
-    border: 1px solid var(--line-strong);
-    color: var(--ink);
-    padding: 12px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 600;
-    font-size: 14px;
-    transition: 0.2s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-  }
-  .toggle-btn:hover { border-color: rgba(0,0,0,0.3); background: var(--bg-2); }
-  .toggle-btn[data-active="true"] {
-    background: var(--bg-2);
-    border-color: rgba(0,0,0,0.3);
-  }
-  .indicator { width: 12px; height: 12px; border-radius: 50%; opacity: 0.3; }
-  .toggle-btn[data-active="true"] .indicator { opacity: 1; box-shadow: 0 0 8px currentColor; }
-  
-  .data-box {
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 20px;
-  }
-  .data-box h3 { font-size: 14px; margin-bottom: 16px; color: var(--ink-soft); font-weight: 600; }
-  .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; font-weight: 500; }
-  .stat-row:last-child { margin-bottom: 0; }
-  .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; }
-  
-  .empty-state { color: var(--ink-soft); font-size: 13px; text-align: center; padding: 20px 0; }
-  .alert-badge {
-    display: inline-block;
-    background: rgba(244,63,94,0.1);
-    color: var(--alert-color);
-    border: 1px solid rgba(244,63,94,0.3);
-    padding: 6px 12px;
-    border-radius: 99px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-top: 12px;
-    width: 100%;
-    text-align: center;
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nefes Haritası</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a; 
+            --bg: #f8fafc;
+            --red: #ef4444; 
+            --yellow: #f59e0b;
+            --green: #10b981;
+            --blue: #3b82f6;
+            --text: #334155;
+            --surface: #ffffff;
+        }
+        body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #e2e8f0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        .app { width: 100%; max-width: 430px; height: 100%; background: var(--bg); position: relative; display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,0,0,0.15); overflow: hidden; }
+        
+        header { background: linear-gradient(135deg, var(--primary) 0%, #1e293b 100%); color: white; padding: 28px 20px 24px; text-align: center; position: relative; z-index: 10; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.1); transform: translateY(-20px); opacity: 0; animation: slideDown 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .badge { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); font-size: 10px; padding: 6px 10px; border-radius: 20px; font-weight: 700; letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.1); }
+        h1 { margin: 0 0 6px 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+        .subtitle { margin: 0; font-size: 13px; color: #cbd5e1; font-weight: 400; }
+        
+        .map-area { flex: 1; position: relative; background: #f1f5f9; display: flex; align-items: center; justify-content: center; margin-top: -20px; opacity: 0; animation: fadeIn 0.8s ease forwards 0.2s; }
+        
+        .abstract-map { 
+            position: absolute; 
+            inset: -50px;
+            background-color: #f1f5f9;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800' width='100%25' height='100%25'%3E%3Cg stroke='%2394a3b8' stroke-width='1.5' fill='none' opacity='0.4'%3E%3Cpath d='M-50,250 L150,220 L220,360 L100,450 L-20,480 Z'/%3E%3Cpath d='M150,220 L350,180 L420,330 L220,360 Z'/%3E%3Cpath d='M350,180 L580,160 L620,310 L420,330 Z'/%3E%3Cpath d='M420,330 L620,310 L750,450 L680,640 L450,620 Z'/%3E%3Cpath d='M220,360 L420,330 L450,620 L280,710 L100,450 Z'/%3E%3Cpath d='M450,620 L680,640 L650,850 L400,880 L280,710 Z'/%3E%3Cpath d='M100,450 L280,710 L150,820 L-20,780 L-20,480 Z'/%3E%3Cpath d='M350,-20 L580,160 L350,180 L150,-10 Z'/%3E%3Cpath d='M580,160 L820,-10 L750,450 L620,310 Z'/%3E%3C/g%3E%3C/svg%3E");
+            background-size: cover;
+            background-position: center;
+            animation: floatingMap 15s ease-in-out infinite alternate;
+        }
 
-  #map { flex: 1; background: #E5E7EB; }
-  
-  .leaflet-popup-content-wrapper { 
-    background: var(--bg-1); color: var(--ink); 
-    border: 1px solid var(--line); border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  }
-  .leaflet-popup-tip { background: var(--bg-1); }
-</style>
+        .micro-copy { position: absolute; top: 40px; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; color: var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.05); z-index: 5; pointer-events: none; border: 1px solid rgba(255,255,255,0.5); transform: translateY(10px); opacity: 0; animation: slideUp 0.5s forwards 0.6s; }
+        
+        .node { position: absolute; cursor: pointer; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; transform: translate(-50%, -50%) scale(0); transition: filter 0.2s; }
+        .node:active { filter: brightness(0.9); }
+        
+        .pin-wrapper { position: relative; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; }
+        .pin-pulse { position: absolute; width: 100%; height: 100%; background: var(--blue); border-radius: 50%; opacity: 0.3; animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .marker-pin {
+            width: 28px; height: 28px; border-radius: 50% 50% 50% 0; background: linear-gradient(135deg, #60a5fa, var(--blue)); position: absolute;
+            transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 2px 4px 10px rgba(59, 130, 246, 0.3); border: 2px solid white;
+        }
+        .marker-pin::after { content: ''; width: 8px; height: 8px; background: white; border-radius: 50%; position: absolute; box-shadow: inset 0 1px 2px rgba(0,0,0,0.2); }
+        
+        .node.danger .marker-pin { background: linear-gradient(135deg, #f87171, var(--red)); box-shadow: 2px 4px 10px rgba(239, 68, 68, 0.3); }
+        .node.danger .pin-pulse { background: var(--red); }
+        
+        .node.warning .marker-pin { background: linear-gradient(135deg, #fbbf24, var(--yellow)); box-shadow: 2px 4px 10px rgba(245, 158, 11, 0.3); }
+        .node.warning .pin-pulse { background: var(--yellow); }
+
+        .node-label { font-size: 14px; font-weight: 800; color: var(--primary); text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 0 4px 8px rgba(0,0,0,0.1); line-height: 1.1; letter-spacing: -0.3px; }
+        .node-label small { font-size: 11px; font-weight: 600; color: #64748b; }
+        
+        /* Animasyonlar */
+        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.6; } 100% { transform: scale(2.2); opacity: 0; } }
+        @keyframes slideDown { to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
+        @keyframes popIn { 0% { transform: translate(-50%, -50%) scale(0); } 80% { transform: translate(-50%, -50%) scale(1.1); } 100% { transform: translate(-50%, -50%) scale(1); } }
+        @keyframes floatingMap { 0% { transform: scale(1) translate(0, 0); } 100% { transform: scale(1.05) translate(-10px, 10px); } }
+        
+        /* Yeni ve Daha Geniş Konumlar */
+        #node-gebze { top: 40%; left: 50%; animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.4s; } 
+        #node-dilovasi { top: 72%; left: 75%; animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.6s; } 
+        #node-cayirova { top: 32%; left: 15%; animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.8s; } 
+        
+        .sheet-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.4s ease; z-index: 15; }
+        .sheet-backdrop.visible { opacity: 1; pointer-events: auto; }
+        
+        .bottom-sheet { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); border-radius: 32px 32px 0 0; padding: 24px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 20; max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); }
+        .bottom-sheet.open { transform: translateY(0); }
+        
+        .drag-handle { width: 48px; height: 5px; background: #cbd5e1; border-radius: 3px; margin: -12px auto 16px; }
+        .close-btn { position: absolute; top: 20px; right: 20px; background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .close-btn:active { background: #e2e8f0; }
+        
+        .sheet-header { margin-bottom: 4px; padding-right: 40px; }
+        .district-name { font-size: 28px; color: var(--primary); font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px; }
+        .summary-badge { display: inline-flex; align-items: center; gap: 6px; background: #fef2f2; color: var(--red); font-weight: 700; font-size: 13px; padding: 8px 14px; border-radius: 12px; border: 1px solid #fee2e2; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .card-title { font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 16px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+        
+        .bar-chart { display: flex; align-items: flex-end; height: 90px; gap: 10px; }
+        .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+        .bar { width: 100%; border-radius: 6px 6px 0 0; background: #94a3b8; transition: height 1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .bar.danger { background: linear-gradient(180deg, var(--red) 0%, #dc2626 100%); }
+        .bar.safe { background: linear-gradient(180deg, var(--green) 0%, #059669 100%); }
+        .bar.warning { background: linear-gradient(180deg, var(--yellow) 0%, #d97706 100%); }
+        .b-val { font-size: 12px; font-weight: 800; margin-bottom: 6px; color: var(--primary); }
+        .b-lbl { font-size: 10px; color: #64748b; margin-top: 8px; text-align: center; line-height: 1.2; font-weight: 500; }
+        
+        .donut-wrap { display: flex; align-items: center; gap: 16px; }
+        .donut { width: 70px; height: 70px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); transition: background 1s ease-out; }
+        .donut-inner { width: 50px; height: 50px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .donut-val { font-size: 15px; font-weight: 800; color: var(--primary); }
+        .pop-details { font-size: 12px; color: #475569; line-height: 1.7; }
+        .pop-details strong { color: var(--primary); font-weight: 700; }
+        
+        .data-note { font-size: 10px; color: #94a3b8; margin-top: 12px; text-align: center; font-weight: 500; }
+        
+        .insight-box { background: linear-gradient(to right, #f0f9ff, #e0f2fe); border-left: 4px solid var(--blue); padding: 18px; border-radius: 12px; font-size: 13px; font-weight: 600; color: var(--primary); line-height: 1.6; display: flex; gap: 12px; align-items: flex-start; }
+        
+        .footer-info { font-size: 10px; color: #94a3b8; line-height: 1.5; border-top: 1px dashed #e2e8f0; padding-top: 16px; margin-top: 4px; }
+        .footer-info strong { color: #64748b; }
+    </style>
 </head>
 <body>
 
-<div id="sidebar">
-  <div class="header">
-    <h1><span style="font-size: 24px;">🌬️</span> Nefes Haritası</h1>
-    <p>Gebze Pilot Bölge - Etkileşimli Analiz<br>Proje Ekibi: Şule, Özge, Rabia, Anıl</p>
-  </div>
-  
-  <div class="panel-content">
-    <div class="controls">
-      <button class="toggle-btn" id="btn-air" data-active="true">
-        <div class="indicator" style="background: var(--air-color); color: var(--air-color);"></div>
-        Hava Kalitesi (PM10)
-      </button>
-      <button class="toggle-btn" id="btn-pop" data-active="true">
-        <div class="indicator" style="background: var(--pop-color); color: var(--pop-color);"></div>
-        Kırılgan Nüfus (0-14 & 65+)
-      </button>
-      <button class="toggle-btn" id="btn-overlap" data-active="false">
-        <div class="indicator" style="background: var(--alert-color); color: var(--alert-color);"></div>
-        Kritik Örtüşme (Kesişim)
-      </button>
+<div class="app">
+    <header>
+        <div class="badge">PİLOT DEMO</div>
+        <h1>Nefes Haritası</h1>
+        <p class="subtitle">Hava kirliliği ve hassas nüfus tek haritada</p>
+    </header>
+
+    <div class="map-area">
+        <div class="micro-copy">Detaylar için bir noktaya dokunun</div>
+        <div class="abstract-map"></div>
+
+        <div class="node" id="node-gebze" onclick="openSheet('gebze')">
+            <div class="pin-wrapper">
+                <div class="pin-pulse"></div>
+                <div class="marker-pin"></div>
+            </div>
+            <div class="node-label">GEBZE<br><small>İstasyonu</small></div>
+        </div>
+
+        <div class="node danger" id="node-dilovasi" onclick="openSheet('dilovasi')">
+            <div class="pin-wrapper">
+                <div class="pin-pulse"></div>
+                <div class="marker-pin"></div>
+            </div>
+            <div class="node-label">DİLOVASI<br><small>İstasyonu</small></div>
+        </div>
+
+        <div class="node warning" id="node-cayirova" onclick="openSheet('cayirova')">
+            <div class="pin-wrapper">
+                <div class="pin-pulse"></div>
+                <div class="marker-pin"></div>
+            </div>
+            <div class="node-label">ÇAYIROVA<br><small>İstasyonu</small></div>
+        </div>
     </div>
 
-    <div class="data-box" id="info-panel">
-      <h3>Seçili Bölge Analizi</h3>
-      <div id="cell-data" class="empty-state">
-        Harita üzerinden bir hücreye tıklayarak detaylı verileri görüntüleyin.
-      </div>
+    <div class="sheet-backdrop" id="backdrop" onclick="closeSheet()"></div>
+
+    <div class="bottom-sheet" id="sheet">
+        <div class="drag-handle"></div>
+        <button class="close-btn" onclick="closeSheet()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        
+        <div class="sheet-header">
+            <h2 class="district-name" id="d-name">İlçe Adı</h2>
+            <div class="summary-badge" id="d-summary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>Özet Skor</span>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+                    Hava Kalitesi
+                </div>
+                <div class="bar-chart">
+                    <div class="bar-col">
+                        <div class="b-val" id="val-pm10">0</div>
+                        <div class="bar danger" id="bar-pm10" style="height: 0%;"></div>
+                        <div class="b-lbl">PM10<br>(Ölçülen)</div>
+                    </div>
+                    <div class="bar-col">
+                        <div class="b-val">15</div>
+                        <div class="bar safe" style="height: 25%;"></div>
+                        <div class="b-lbl">WHO<br>Sınırı</div>
+                    </div>
+                    <div class="bar-col">
+                        <div class="b-val">40</div>
+                        <div class="bar warning" style="height: 55%;"></div>
+                        <div class="b-lbl">AB<br>Sınırı</div>
+                    </div>
+                </div>
+                <div class="data-note" id="d-completeness">Veri Tamlığı: -</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Kırılgan Nüfus
+                </div>
+                <div class="donut-wrap">
+                    <div class="donut" id="donut-chart" style="background: #e2e8f0;">
+                        <div class="donut-inner">
+                            <span class="donut-val">%<span id="val-vuln">0</span></span>
+                        </div>
+                    </div>
+                    <div class="pop-details">
+                        0-14 Yaş: <strong id="val-age1">0</strong><br>
+                        65+ Yaş: <strong id="val-age2">0</strong><br>
+                        Top: <strong id="val-pop">0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="insight-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span id="d-insight">Birleştirici mesaj burada yer alacak.</span>
+        </div>
+
+        <div class="footer-info">
+            <strong>Veri Kaynakları:</strong> ÇŞİDB Ulusal Hava Kalitesi İzleme Ağı, TÜİK ADNKS<br><br>
+            <strong>Önemli Not:</strong> İstasyon ölçümü bireysel maruziyeti temsil etmez, sadece ön tarama metodolojisidir.
+        </div>
     </div>
-    
-    <div class="data-box">
-      <h3>İlçe Genel Durumu (2024)</h3>
-      <div class="stat-row">
-        <span>Gebze-MTHM PM10 Ort.</span>
-        <span class="stat-val" style="color: var(--air-color);">65.98 µg/m³</span>
-      </div>
-      <div class="stat-row">
-        <span>WHO Sınırı Aşımı</span>
-        <span class="stat-val">4.4 Kat</span>
-      </div>
-      <div class="stat-row">
-        <span>Kırılgan Nüfus Oranı</span>
-        <span class="stat-val" style="color: var(--pop-color);">%29.2</span>
-      </div>
-    </div>
-  </div>
 </div>
 
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  // 1. Haritayı Başlat (Genişletilmiş alana odaklı)
-  const map = L.map('map', {
-    zoomControl: false
-  }).setView([40.812, 29.405], 12); 
-  L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-  // 2. Canlı Sokak Haritası
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri',
-    maxZoom: 16
-  }).addTo(map);
-
-  const state = { air: true, pop: true, overlap: false };
-  const gridLayerGroup = L.layerGroup().addTo(map);
-  let selectedRect = null;
-
-  // Siyah çizginin kapsadığı genişletilmiş koordinat sınırları (Güneyde sahil, Kuzeyde Şekerpınar)
-  const bounds = {
-    sw: [40.755, 29.340], 
-    ne: [40.865, 29.470]  
-  };
-  
-  const rows = 22; const cols = 18;
-  const latStep = (bounds.ne[0] - bounds.sw[0]) / rows;
-  const lngStep = (bounds.ne[1] - bounds.sw[1]) / cols;
-
-  const cells = [];
-
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const sLat = bounds.sw[0] + r * latStep;
-      const sLng = bounds.sw[1] + c * lngStep;
-      
-      // Sarı ile işaretlenen bölgelere denk gelen ızgara koordinatları (Kuzey-Batı / Şekerpınar, Cumhuriyet, Çayırova üstü)
-      const distToYellowSpot1 = Math.sqrt(Math.pow(r - 18, 2) + Math.pow(c - 6, 2));
-      const distToYellowSpot2 = Math.sqrt(Math.pow(r - 14, 2) + Math.pow(c - 5, 2));
-      const distToYellowSpot3 = Math.sqrt(Math.pow(r - 11, 2) + Math.pow(c - 7, 2));
-      
-      const distToIndustry = Math.sqrt(Math.pow(r - 8, 2) + Math.pow(c - 14, 2));
-      
-      let pm10Raw = 80 - (distToIndustry * 4) + (Math.random()*10);
-      let popRaw = 20;
-
-      // Sarı ile işaretli alanlarda kırılgan nüfusu (popRaw) çok yüksek göster
-      const closestYellow = Math.min(distToYellowSpot1, distToYellowSpot2, distToYellowSpot3);
-      if (closestYellow < 3.5) {
-        popRaw = 75 - (closestYellow * 12) + (Math.random()*5);
-      } else {
-        popRaw = 30 - (Math.sqrt(Math.pow(r - 5, 2) + Math.pow(c - 10, 2)) * 1.5) + (Math.random()*10);
-      }
-      
-      if (pm10Raw < 15) pm10Raw = 15 + Math.random()*10;
-      if (popRaw < 5) popRaw = 5 + Math.random()*5;
-
-      const displayRow = (rows - r);
-      
-      cells.push({
-        id: `R${displayRow}-C${c+1}`, bounds: [[sLat, sLng], [sLat + latStep, sLng + lngStep]],
-        pm10: pm10Raw.toFixed(1), pop: popRaw.toFixed(1),
-        isCritical: (pm10Raw > 60 && popRaw > 40)
-      });
-    }
-  }
-
-  function renderGrid() {
-    gridLayerGroup.clearLayers();
-    
-    cells.forEach(cell => {
-      let fillColor = 'transparent';
-      let fillOpacity = 0;
-      
-      const pm10Norm = Math.min(1, (cell.pm10 - 20) / 70);
-      const popNorm = Math.min(1, (cell.pop - 10) / 60); // Popülasyon normalizasyon eşiği sarı bölgeler için artırıldı
-
-      if (state.overlap && cell.isCritical) {
-        fillColor = 'var(--alert-color)'; fillOpacity = 0.6;
-      } else if (!state.overlap) {
-        if (state.air && state.pop) {
-          if(pm10Norm > popNorm) { fillColor = 'var(--air-color)'; fillOpacity = pm10Norm * 0.5; }
-          else { fillColor = 'var(--pop-color)'; fillOpacity = popNorm * 0.5; }
+    const data = {
+        gebze: {
+            name: "Gebze",
+            summary: "WHO limitinin 4,4 katı",
+            pm10: 65.98,
+            completeness: "%96.4 (352 gün)",
+            pop: "411.800",
+            age0_14: "%22.7",
+            age65: "%6.5",
+            vulnTotal: 29.2,
+            insight: "Bu bölgede hava kirliliği WHO limitinin çok üzerinde VE nüfusun yaklaşık 3'te 1'i hassas yaş grubunda yer alıyor."
+        },
+        dilovasi: {
+            name: "Dilovası",
+            summary: "Kritik Risk Seviyesi",
+            pm10: 75.10,
+            completeness: "%95.0 (346 gün)",
+            pop: "53.416",
+            age0_14: "%26.1",
+            age65: "%4.2",
+            vulnTotal: 30.3,
+            insight: "Sanayi yoğun bu alanda hava kirliliği tehlikeli boyutlarda VE çocuk nüfus oranının bölge ortalamasının üzerinde olduğu görülüyor."
+        },
+        cayirova: {
+            name: "Çayırova",
+            summary: "AB Sınırının Üzerinde",
+            pm10: 52.40,
+            completeness: "%98.1 (358 gün)",
+            pop: "150.792",
+            age0_14: "%24.5",
+            age65: "%5.8",
+            vulnTotal: 30.3,
+            insight: "Yüksek kirlilik seviyelerine sahip bu bölgede yaşayan her 3 kişiden 1'i hassas nüfus grubunda yer alıyor."
         }
-        else if (state.air) { fillColor = 'var(--air-color)'; fillOpacity = pm10Norm * 0.6; }
-        else if (state.pop) { fillColor = 'var(--pop-color)'; fillOpacity = popNorm * 0.6; }
-      }
+    };
 
-      if (fillOpacity > 0.1 || state.overlap) {
-        const rect = L.rectangle(cell.bounds, {
-          color: 'rgba(0,0,0,0.15)',
-          weight: 1,
-          fillColor: fillColor, 
-          fillOpacity: fillOpacity
-        });
-
-        rect.on('click', () => handleCellClick(cell, rect));
-        rect.addTo(gridLayerGroup);
-      }
-    });
-  }
-
-  function handleCellClick(cell, rectLayer) {
-    if(selectedRect) { selectedRect.setStyle({ color: 'rgba(0,0,0,0.15)', weight: 1 }); }
-    rectLayer.setStyle({ color: '#0F172A', weight: 3 }); 
-    selectedRect = rectLayer;
-
-    const panel = document.getElementById('cell-data');
-    panel.classList.remove('empty-state');
+    const sheet = document.getElementById('sheet');
+    const backdrop = document.getElementById('backdrop');
     
-    let html = `
-      <div class="stat-row"><span>Hücre Kodu</span><span class="stat-val">${cell.id}</span></div>
-      <div class="stat-row"><span>Tahmini PM10</span><span class="stat-val" style="color:var(--air-color)">${cell.pm10} µg/m³</span></div>
-      <div class="stat-row"><span>Kırılgan Nüfus</span><span class="stat-val" style="color:var(--pop-color)">%${cell.pop}</span></div>
-    `;
-
-    if(cell.isCritical) {
-      html += `<div class="alert-badge">⚠️ Yüksek Kirlilik & Hassas Nüfus Örtüşmesi</div>`;
+    // Rakam saydırma animasyonu fonksiyonu
+    function countUp(elementId, endValue, isFloat, duration = 1000) {
+        let startTimestamp = null;
+        const element = document.getElementById(elementId);
+        element.innerText = "0"; 
+        
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            // ease-out efekti
+            const easeProgress = 1 - Math.pow(1 - progress, 3); 
+            const current = easeProgress * endValue;
+            
+            element.innerText = isFloat ? current.toFixed(2) : Math.floor(current);
+            
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                element.innerText = isFloat ? endValue.toFixed(2) : endValue;
+            }
+        };
+        window.requestAnimationFrame(step);
     }
     
-    panel.innerHTML = html;
-    
-    L.popup({closeButton: false, offset: [0, -10]})
-      .setLatLng(rectLayer.getBounds().getCenter())
-      .setContent(`<b>${cell.id}</b><br>PM10: ${cell.pm10}<br>Nüfus: %${cell.pop}`)
-      .openOn(map);
-  }
+    function openSheet(id) {
+        const d = data[id];
+        
+        document.getElementById('d-name').innerText = d.name;
+        document.querySelector('#d-summary span').innerText = d.summary;
+        
+        document.getElementById('d-completeness').innerText = `Veri Tamlığı: ${d.completeness}`;
+        document.getElementById('val-pop').innerText = d.pop;
+        document.getElementById('val-age1').innerText = d.age0_14;
+        document.getElementById('val-age2').innerText = d.age65;
+        document.getElementById('d-insight').innerText = d.insight;
 
-  document.getElementById('btn-air').addEventListener('click', (e) => {
-    state.air = !state.air; e.currentTarget.setAttribute('data-active', state.air);
-    if(state.overlap) { state.overlap = false; document.getElementById('btn-overlap').setAttribute('data-active', false); }
-    renderGrid();
-  });
-  
-  document.getElementById('btn-pop').addEventListener('click', (e) => {
-    state.pop = !state.pop; e.currentTarget.setAttribute('data-active', state.pop);
-    if(state.overlap) { state.overlap = false; document.getElementById('btn-overlap').setAttribute('data-active', false); }
-    renderGrid();
-  });
-  
-  document.getElementById('btn-overlap').addEventListener('click', (e) => {
-    state.overlap = !state.overlap; e.currentTarget.setAttribute('data-active', state.overlap);
-    if(state.overlap) {
-      state.air = true; state.pop = true;
-      document.getElementById('btn-air').setAttribute('data-active', true);
-      document.getElementById('btn-pop').setAttribute('data-active', true);
+        sheet.classList.add('open');
+        backdrop.classList.add('visible');
+        
+        // Animasyonları paneller açılırken ufak bir gecikmeyle tetikle
+        setTimeout(() => {
+            // Çubuk grafiği yükselme animasyonu
+            const pm10Height = Math.min((d.pm10 / 80) * 100, 100);
+            document.getElementById('bar-pm10').style.height = pm10Height + '%';
+            
+            // Halka grafiği dolma animasyonu
+            document.getElementById('donut-chart').style.background = `conic-gradient(var(--red) 0% ${d.vulnTotal}%, #f1f5f9 ${d.vulnTotal}% 100%)`;
+            
+            // Rakam sayıcıları başlat
+            countUp('val-pm10', d.pm10, true, 1200);
+            countUp('val-vuln', d.vulnTotal, true, 1200);
+        }, 200);
     }
-    renderGrid();
-  });
 
-  renderGrid();
-
-  L.circleMarker([40.793, 29.44], {
-    color: '#0F172A', fillColor: '#FFFFFF', fillOpacity: 1, radius: 6, weight: 2
-  }).addTo(map).bindPopup('<b>Gebze-MTHM İstasyonu</b><br>2024 Yıllık Ort: 65.98 µg/m³');
-
+    function closeSheet() {
+        sheet.classList.remove('open');
+        backdrop.classList.remove('visible');
+        setTimeout(() => {
+            document.getElementById('bar-pm10').style.height = '0%';
+            document.getElementById('donut-chart').style.background = '#e2e8f0';
+            document.getElementById('val-pm10').innerText = '0';
+            document.getElementById('val-vuln').innerText = '0';
+        }, 400);
+    }
 </script>
 </body>
 </html>
